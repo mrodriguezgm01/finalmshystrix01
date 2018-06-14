@@ -1,0 +1,75 @@
+buildscript {
+	ext {
+		springBootVersion = '1.5.8.RELEASE'
+	}
+	repositories {
+		jcenter()
+		mavenCentral()
+	}
+	dependencies {
+		classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+		classpath 'com.bmuschko:gradle-docker-plugin:3.2.0'
+	}
+}
+
+apply plugin: 'java'
+apply plugin: 'groovy'
+apply plugin: 'eclipse'
+apply plugin: 'org.springframework.boot'
+apply plugin: com.bmuschko.gradle.docker.DockerRemoteApiPlugin
+
+jar {
+	baseName = 'service'
+	version = ''
+}
+
+version = '0.0.1'
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+repositories {
+	jcenter()
+	mavenCentral()
+}
+
+ext {
+	springCloudVersion = 'Dalston.SR4'
+}
+
+dependencyManagement {
+	imports {
+		mavenBom "org.springframework.cloud:spring-cloud-dependencies:${springCloudVersion}"
+	}
+}
+
+dependencies {
+	compile('org.springframework.cloud:spring-cloud-starter-eureka-server')
+	compile('org.codehaus.groovy:groovy-all:2.4.8')
+        compile('org.springframework.cloud:spring-cloud-starter-hystrix')
+	testCompile('org.springframework.boot:spring-boot-starter-test')
+        compile('org.springframework.cloud:spring-cloud-starter-hystrix-dashboard')
+        compile group: 'org.springframework.boot', name: 'spring-boot-starter-actuator'
+}
+
+task createDockerfile(type: com.bmuschko.gradle.docker.tasks.image.Dockerfile) {
+	destFile = project.file('build/libs/Dockerfile')
+	from 'openjdk:8u131-jre-alpine'
+	maintainer 'ProyectoFinal MIC'
+	copyFile 'service.jar', '/opt/service.jar'
+
+	exposePort 8762
+	entryPoint 'java', '-jar', '/opt/service.jar'
+}
+
+task buildImage(type: com.bmuschko.gradle.docker.tasks.image.DockerBuildImage) {
+	dependsOn createDockerfile
+	inputDir = createDockerfile.destFile.parentFile
+	tag = "mrodriguezmgm01/circuitbreaker-hystrix:${project.version}".toString().toLowerCase()
+}
+
+task pushImage(type: com.bmuschko.gradle.docker.tasks.image.DockerPushImage) {
+	dependsOn buildImage
+	imageName = buildImage.tag
+}
+
+createDockerfile.dependsOn bootRepackage

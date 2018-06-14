@@ -1,0 +1,24 @@
+spring.application.name: hystrix_service
+
+instance.id: ${random.value}
+
+eureka:
+  client:
+    serviceUrl:
+      defaultZone: http://127.0.0.1:8761/eureka/
+  instance:
+    hostname: localhost
+    prefer-ip-address: true
+    metadata-map:
+     instanceId: ${instance.id}
+
+server.port: 8084
+management.port: 8085
+
+#spring:
+ # datasource:
+  #  url: jdbc:postgresql://localhost:5432/cacti_data_customer
+  #  username: cacti
+  #  password: cacti
+
+management.security.enabled: false
